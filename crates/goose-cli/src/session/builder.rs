@@ -122,13 +122,10 @@ pub async fn build_session(
     // Only override system prompt if custom mode is set
     if system_mode == Some("custom".to_string()) {
         let override_prompt = config
-          .load_system_override_template()
-          .expect("Failed to load system override template");
+            .load_system_override_template()
+            .expect("Failed to load system override template");
 
-        session
-        .agent
-        .override_system_prompt(override_prompt)
-        .await;
+        session.agent.override_system_prompt(override_prompt).await;
     }
 
     output::display_session_info(resume, &provider_name, &model, &session_file);

@@ -139,7 +139,11 @@ impl Config {
     ///
     /// This is primarily useful for testing or for applications that need
     /// to manage multiple configuration files.
-    pub fn new<P: AsRef<Path>>(config_path: P, service: &str, system_override_path: P) -> Result<Self, ConfigError> {
+    pub fn new<P: AsRef<Path>>(
+        config_path: P,
+        service: &str,
+        system_override_path: P,
+    ) -> Result<Self, ConfigError> {
         Ok(Config {
             config_path: config_path.as_ref().to_path_buf(),
             keyring_service: service.to_string(),
