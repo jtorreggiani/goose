@@ -175,7 +175,6 @@ impl Capabilities {
 
     /// Override the system prompt with custom text
     pub fn set_system_prompt_override(&mut self, template: String) {
-        println!("Setting system prompt override: {}", template);
         self.system_prompt_override = Some(template);
     }
 
