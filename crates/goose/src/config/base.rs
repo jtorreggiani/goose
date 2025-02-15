@@ -147,7 +147,7 @@ impl Config {
         Ok(Config {
             config_path: config_path.as_ref().to_path_buf(),
             keyring_service: service.to_string(),
-            system_override_path: system_override_path.as_ref().to_path_buf(),
+            system_override_path: system_override_path.as_ref().with_file_name("system.md"),
         })
     }
 
