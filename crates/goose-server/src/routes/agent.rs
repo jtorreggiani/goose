@@ -20,6 +20,7 @@ struct VersionsResponse {
 #[derive(Deserialize)]
 struct ExtendPromptRequest {
     extension: String,
+    system_override: String,
 }
 
 #[derive(Serialize)]
@@ -88,6 +89,7 @@ async fn extend_prompt(
 
     let mut agent = state.agent.lock().await;
     if let Some(ref mut agent) = *agent {
+        agent.override_system_prompt(payload.system_override).await;
         agent.extend_system_prompt(payload.extension).await;
         Ok(Json(ExtendPromptResponse { success: true }))
     } else {

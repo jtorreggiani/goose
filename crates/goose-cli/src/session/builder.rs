@@ -39,6 +39,8 @@ pub async fn build_session(
     }
     .expect("Failed to create agent");
 
+    let system_mode: Option<String> = config.get("GOOSE_SYSTEM_MODE").ok();
+
     // Setup extensions for the agent
     for extension in ExtensionManager::get_all().expect("should load extensions") {
         if extension.enabled {
@@ -116,6 +118,18 @@ pub async fn build_session(
         .agent
         .extend_system_prompt(super::prompt::get_cli_prompt())
         .await;
+
+    // Only override system prompt if custom mode is set
+    if system_mode == Some("custom".to_string()) {
+        let override_prompt = config
+          .load_system_override_template()
+          .expect("Failed to load system override template");
+
+        session
+        .agent
+        .override_system_prompt(override_prompt)
+        .await;
+    }
 
     output::display_session_info(resume, &provider_name, &model, &session_file);
     session

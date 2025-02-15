@@ -99,6 +99,7 @@ impl From<keyring::Error> for ConfigError {
 pub struct Config {
     config_path: PathBuf,
     keyring_service: String,
+    system_override_path: PathBuf,
 }
 
 // Global instance
@@ -116,9 +117,11 @@ impl Default for Config {
         std::fs::create_dir_all(&config_dir).expect("Failed to create config directory");
 
         let config_path = config_dir.join("config.yaml");
+        let system_override_path = config_dir.join("system.md");
         Config {
             config_path,
             keyring_service: KEYRING_SERVICE.to_string(),
+            system_override_path,
         }
     }
 }
@@ -136,10 +139,11 @@ impl Config {
     ///
     /// This is primarily useful for testing or for applications that need
     /// to manage multiple configuration files.
-    pub fn new<P: AsRef<Path>>(config_path: P, service: &str) -> Result<Self, ConfigError> {
+    pub fn new<P: AsRef<Path>>(config_path: P, service: &str, system_override_path: P) -> Result<Self, ConfigError> {
         Ok(Config {
             config_path: config_path.as_ref().to_path_buf(),
             keyring_service: service.to_string(),
+            system_override_path: system_override_path.as_ref().with_file_name("system.md"),
         })
     }
 
@@ -354,6 +358,15 @@ impl Config {
         entry.set_password(&json_value)?;
         Ok(())
     }
+
+    /// Load the system override template
+    pub fn load_system_override_template(&self) -> Result<String, ConfigError> {
+        if self.system_override_path.exists() {
+            Ok(std::fs::read_to_string(&self.system_override_path)?)
+        } else {
+            Ok(String::new())
+        }
+    }
 }
 
 #[cfg(test)]
@@ -374,7 +387,7 @@ mod tests {
     #[test]
     fn test_basic_config() -> Result<(), ConfigError> {
         let temp_file = NamedTempFile::new().unwrap();
-        let config = Config::new(temp_file.path(), TEST_KEYRING_SERVICE)?;
+        let config = Config::new(temp_file.path(), TEST_KEYRING_SERVICE, temp_file.path())?;
 
         // Set a simple string value
         config.set("test_key", Value::String("test_value".to_string()))?;
@@ -400,7 +413,7 @@ mod tests {
         }
 
         let temp_file = NamedTempFile::new().unwrap();
-        let config = Config::new(temp_file.path(), TEST_KEYRING_SERVICE)?;
+        let config = Config::new(temp_file.path(), TEST_KEYRING_SERVICE, temp_file.path())?;
 
         // Set a complex value
         config.set(
@@ -421,7 +434,7 @@ mod tests {
     #[test]
     fn test_missing_value() {
         let temp_file = NamedTempFile::new().unwrap();
-        let config = Config::new(temp_file.path(), TEST_KEYRING_SERVICE).unwrap();
+        let config = Config::new(temp_file.path(), TEST_KEYRING_SERVICE, temp_file.path()).unwrap();
 
         let result: Result<String, ConfigError> = config.get("nonexistent_key");
         assert!(matches!(result, Err(ConfigError::NotFound(_))));
@@ -430,7 +443,7 @@ mod tests {
     #[test]
     fn test_yaml_formatting() -> Result<(), ConfigError> {
         let temp_file = NamedTempFile::new().unwrap();
-        let config = Config::new(temp_file.path(), TEST_KEYRING_SERVICE)?;
+        let config = Config::new(temp_file.path(), TEST_KEYRING_SERVICE, temp_file.path())?;
 
         config.set("key1", Value::String("value1".to_string()))?;
         config.set("key2", Value::Number(42.into()))?;
@@ -446,7 +459,7 @@ mod tests {
     #[test]
     fn test_value_management() -> Result<(), ConfigError> {
         let temp_file = NamedTempFile::new().unwrap();
-        let config = Config::new(temp_file.path(), TEST_KEYRING_SERVICE)?;
+        let config = Config::new(temp_file.path(), TEST_KEYRING_SERVICE, temp_file.path())?;
 
         config.set("key", Value::String("value".to_string()))?;
 
@@ -466,7 +479,7 @@ mod tests {
     fn test_secret_management() -> Result<(), ConfigError> {
         cleanup_keyring()?;
         let temp_file = NamedTempFile::new().unwrap();
-        let config = Config::new(temp_file.path(), TEST_KEYRING_SERVICE)?;
+        let config = Config::new(temp_file.path(), TEST_KEYRING_SERVICE, temp_file.path())?;
 
         // Test setting and getting a simple secret
         config.set_secret("api_key", Value::String("secret123".to_string()))?;
@@ -493,7 +506,7 @@ mod tests {
     fn test_multiple_secrets() -> Result<(), ConfigError> {
         cleanup_keyring()?;
         let temp_file = NamedTempFile::new().unwrap();
-        let config = Config::new(temp_file.path(), TEST_KEYRING_SERVICE)?;
+        let config = Config::new(temp_file.path(), TEST_KEYRING_SERVICE, temp_file.path())?;
 
         // Set multiple secrets
         config.set_secret("key1", Value::String("secret1".to_string()))?;
@@ -515,6 +528,21 @@ mod tests {
         assert_eq!(value2, "secret2");
 
         cleanup_keyring()?;
+        Ok(())
+    }
+
+    #[test]
+    fn test_system_override() -> Result<(), ConfigError> {
+        let temp_file = NamedTempFile::new().unwrap();
+        let config = Config::new(temp_file.path(), TEST_KEYRING_SERVICE, temp_file.path())?;
+
+        // Set a system override template
+        let template = "This is a test template";
+        std::fs::write(&config.system_override_path, template)?;
+
+        let result = config.load_system_override_template()?;
+        assert_eq!(result, template);
+
         Ok(())
     }
 }

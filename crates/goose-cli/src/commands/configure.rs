@@ -326,6 +326,7 @@ pub async fn configure_provider_dialog() -> Result<bool, Box<dyn Error>> {
             // Update config with new values only if the test succeeds
             config.set("GOOSE_PROVIDER", Value::String(provider_name.to_string()))?;
             config.set("GOOSE_MODEL", Value::String(model.clone()))?;
+            config.set("GOOSE_SYSTEM_MODE", Value::String("default".to_string()))?;
             cliclack::outro("Configuration saved successfully")?;
             Ok(true)
         }
