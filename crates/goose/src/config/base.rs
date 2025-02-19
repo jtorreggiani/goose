@@ -371,6 +371,10 @@ impl Config {
             Ok(String::new())
         }
     }
+
+    pub fn system_override_exists(&self) -> bool {
+        self.system_override_path.exists()
+    }
 }
 
 #[cfg(test)]
