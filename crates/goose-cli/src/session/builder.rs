@@ -120,8 +120,8 @@ pub async fn build_session(
     // Only override system prompt if a system override exists
     let system_prompt_file: Option<String> = config.get("GOOSE_SYSTEM_PROMPT_FILE_PATH").ok();
     if let Some(ref path) = system_prompt_file {
-        let override_prompt = std::fs::read_to_string(path)
-            .expect("Failed to read system prompt file");
+        let override_prompt =
+            std::fs::read_to_string(path).expect("Failed to read system prompt file");
         session.agent.override_system_prompt(override_prompt).await;
     }
 
