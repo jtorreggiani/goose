@@ -117,10 +117,11 @@ pub async fn build_session(
         .extend_system_prompt(super::prompt::get_cli_prompt())
         .await;
 
+    let system_prompt_file: Option<String> = config.get("GOOSE_SYSTEM_PROMPT_FILE_PATH").ok();
     // Only override system prompt if a system override exists
-    if config.system_override_exists() {
+    if let Some(ref path) = system_prompt_file {
         let override_prompt = config
-            .load_system_override_template()
+            .load_system_override_template(path)
             .expect("Failed to load system override template");
 
         session.agent.override_system_prompt(override_prompt).await;
