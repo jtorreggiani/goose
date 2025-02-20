@@ -136,10 +136,7 @@ impl Config {
     ///
     /// This is primarily useful for testing or for applications that need
     /// to manage multiple configuration files.
-    pub fn new<P: AsRef<Path>>(
-        config_path: P,
-        service: &str,
-    ) -> Result<Self, ConfigError> {
+    pub fn new<P: AsRef<Path>>(config_path: P, service: &str) -> Result<Self, ConfigError> {
         Ok(Config {
             config_path: config_path.as_ref().to_path_buf(),
             keyring_service: service.to_string(),
@@ -357,11 +354,6 @@ impl Config {
         entry.set_password(&json_value)?;
         Ok(())
     }
-
-    /// Load the system override template
-    pub fn load_system_override_template(&self, system_override_path: &str) -> Result<String, ConfigError> {
-        Ok(std::fs::read_to_string(system_override_path)?)
-    }
 }
 
 #[cfg(test)]
@@ -429,7 +421,7 @@ mod tests {
     #[test]
     fn test_missing_value() {
         let temp_file = NamedTempFile::new().unwrap();
-        let config = Config::new(temp_file.path(), TEST_KEYRING_SERVICE);
+        let config = Config::new(temp_file.path(), TEST_KEYRING_SERVICE).unwrap();
 
         let result: Result<String, ConfigError> = config.get("nonexistent_key");
         assert!(matches!(result, Err(ConfigError::NotFound(_))));
